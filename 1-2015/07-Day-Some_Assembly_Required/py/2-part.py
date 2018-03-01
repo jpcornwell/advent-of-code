@@ -4,6 +4,7 @@ def solve(wire, assignments):
     if wire.isdigit():
         return int(wire)
 
+    # the value of the wire has already been calculated from a previous call
     if isinstance(assignments[wire], int):
         return assignments[wire]
 
