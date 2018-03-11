@@ -13,11 +13,11 @@ def add_edge(start, end, weight):
     graph[start][end] = weight
     graph[end][start] = weight
 
-def find_edge_length(start, end):
+def edge_length(start, end):
     return graph[start][end]
 
-def find_path_length(path):
-    return sum([find_edge_length(start, end) for start, end in zip(path, path[1:])])
+def path_length(path):
+    return sum([edge_length(*edge) for edge in zip(path, path[1:])])
 
 with open('../input.txt') as f:
     content = f.readlines()
@@ -28,6 +28,6 @@ for line in content:
 
 vertices = graph.keys()
 
-max_path_length = max([find_path_length(path) for path in permutations(vertices)])
+max_path_length = max([path_length(path) for path in permutations(vertices)])
 
 print(max_path_length)
