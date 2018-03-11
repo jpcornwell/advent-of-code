@@ -5,15 +5,15 @@ from itertools import permutations
 
 graph = defaultdict(dict)
 
-def add_edge(start, end, weight):
-    graph[start][end] = weight
-    graph[end][start] = weight
+def add_edge(v1, v2, weight):
+    graph[v1][v2] = weight
+    graph[v2][v1] = weight
 
-def edge_length(start, end):
-    return graph[start][end]
+def edge_weight(v1, v2):
+    return graph[v1][v2]
 
-def path_length(path):
-    return sum([edge_length(*edge) for edge in zip(path, path[1:])])
+def path_weight(path):
+    return sum([edge_weight(*edge) for edge in zip(path, path[1:])])
 
 with open('../input.txt') as f:
     content = f.readlines()
@@ -24,6 +24,6 @@ for line in content:
 
 vertices = graph.keys()
 
-min_path_length = min([path_length(path) for path in permutations(vertices)])
+min_path_weight = min([path_weight(path) for path in permutations(vertices)])
 
-print(min_path_length)
+print(min_path_weight)
