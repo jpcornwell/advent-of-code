@@ -1,15 +1,11 @@
 #!/usr/bin/python3
 
+from collections import defaultdict
 from itertools import permutations
 
-graph = {}
+graph = defaultdict(dict)
 
 def add_edge(start, end, weight):
-    if start not in graph:
-        graph[start] = {}
-    if end not in graph:
-        graph[end] = {}
-
     graph[start][end] = weight
     graph[end][start] = weight
 
