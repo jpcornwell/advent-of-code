@@ -19,10 +19,7 @@ with open('../input.txt') as f:
 distances = []
 
 for line in content:
-    m = re.search(r'(\d+)[^\d]+(\d+)[^\d]+(\d+)', line)
-    speed = int(m.group(1))
-    run_time = int(m.group(2))
-    rest_time = int(m.group(3))
+    speed, run_time, rest_time = map(int, re.findall(r'(\d+)', line))
     distances.append(calc_distance(speed, run_time, rest_time, 2503))
 
 print(max(distances))
