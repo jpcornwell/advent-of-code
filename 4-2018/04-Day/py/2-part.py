@@ -23,7 +23,9 @@ for line in content:
         for i in range(last_minute, current_minute):
             guards[current_guard][i] += 1
 
-# TODO
+flat_guards = [(guard, minute, guards[guard][minute]) for guard in guards.keys() for minute in guards[guard].keys()]
+
+max_guard, max_minute, *_ = max(flat_guards, key=(lambda x: x[2]))
 
 answer = max_guard * max_minute
 
