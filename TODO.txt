@@ -1,0 +1,4 @@
+
+Write script to automate creating the directories and problem descriptions
+
+Create a template for python solutions
