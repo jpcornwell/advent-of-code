@@ -5,10 +5,7 @@ use lib '../../common';
 use AOC;
 
 # TODO
-# 2d-Grid class that allows negative indices
-#   method to print contents - include coordinates and node values
 # Wire-Layer class that holds logic for parsing commands and tracing wires on a given 2d-Grid
-# Custom type for "wire laying" commands - Ex: U38, R41, D25, R42
 # Function to calculate distance between point and origin
 
 class Node {
@@ -17,11 +14,11 @@ class Node {
 }
 
 class Grid {
-    has Int $!min-x = -100;
-    has Int $!max-x =  100;
-    has Int $!min-y = -100;
-    has Int $!max-y =  100;
-    has @!contents[201;201] of Node;
+    has Int $!min-x                        = -100;
+    has Int $!max-x                        =  100;
+    has Int $!min-y                        = -100;
+    has Int $!max-y                        =  100;
+    has     @!contents[201;201] of Node;
 
     # Hack to get around the fact that default values for compound attribute
     # types aren't supported yet.
@@ -36,18 +33,29 @@ class Grid {
     method get-point($x, $y) {
         return @!contents[$x + 100; $y + 100];
     }
+
+    # Grid should be generic and not have this method which is tied to the
+    # underlying element type as well as the specific requirements for this
+    # script, but it's not a big deal.
+    method get-collision-coordinates() {
+        return @!contents.kv.grep(
+                -> $k, $v { $v.has-wire-a == True && $v.has-wire-b == True }
+            ).map( { my ($index, $node) = $_; $index.map( * - 100) } );
+    }
 }
+
+subset Wire-Layer-Command of Str where /^ [U|D|L|R] <digit>+ $/;
 
 class Wire-Layer {
     has Grid $!grid;
-    has Int $!x-pos;
-    has Int $!y-pos;
-    has Str $!wire;
+    has  Int $!x-pos;
+    has  Int $!y-pos;
+    has  Str $!wire;
 
     method start-wire($wire) {
         $!x-pos = 0;
         $!y-pos = 0;
-        $!wire = $wire;
+        $!wire  = $wire;
     }
 
     method exec-command($command) {
@@ -55,6 +63,10 @@ class Wire-Layer {
 }
 
 my $grid = Grid.new;
+
+$grid.get-point(33,33).has-wire-a = True;
+$grid.get-point(33,33).has-wire-b = True;
+say $grid.get-collision-coordinates;
 
 my $wire-layer = Wire-Layer.new: :$grid;
 
