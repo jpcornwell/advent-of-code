@@ -7,6 +7,8 @@ use AOC;
 class Node {
     has $.has-wire-a is rw = False;
     has $.has-wire-b is rw = False;
+    has $.wire-a-length is rw = 0;
+    has $.wire-b-length is rw = 0;
 }
 
 class Grid {
@@ -25,10 +27,10 @@ class Grid {
     # Grid should be generic and not have this method which is tied to the
     # underlying element type as well as the specific requirements for this
     # script, but it's not a big deal.
-    method get-collision-coordinates() {
+    method get-collision-points() {
         return %!contents.kv.grep(
               -> $k, $v { $v.has-wire-a == True && $v.has-wire-b == True }
-            ).map( { my ($index, $node) = $_; $index.words } );
+            ).map( { my ($index, $node) = $_; ($index.words, $node) } );
     }
 }
 
@@ -38,11 +40,13 @@ class Wire-Layer {
     has Grid $.grid;
     has  Int $!x-pos;
     has  Int $!y-pos;
+    has  Int $!length;
     has  Str $!wire;
 
     method start-wire($wire) {
         $!x-pos = 0;
         $!y-pos = 0;
+        $!length = 0;
         $!wire  = $wire;
     }
 
@@ -51,6 +55,8 @@ class Wire-Layer {
         my $magnitude = $command.substr: 1, *;
 
         for ^$magnitude {
+            $!length++;
+
             given $direction {
                 when 'L' { $!x-pos-- }
                 when 'R' { $!x-pos++ }
@@ -59,14 +65,19 @@ class Wire-Layer {
             }
 
             given $!wire {
-                when 'a' { $!grid.get-point($!x-pos, $!y-pos).has-wire-a = True }
-                when 'b' { $!grid.get-point($!x-pos, $!y-pos).has-wire-b = True }
+                my $node = $!grid.get-point($!x-pos, $!y-pos);
+                when 'a' { $node.has-wire-a = True;
+                           $node.wire-a-length = $!length unless $node.wire-a-length > 0;
+                         }
+                when 'b' { $node.has-wire-b = True;
+                           $node.wire-b-length = $!length unless $node.wire-b-length > 0;
+                         }
             }
         }
     }
 }
 
-sub calc-distance($x, $y) { $x.abs + $y.abs }
+sub calc-total-length($node) { $node.wire-a-length + $node.wire-b-length }
 
 my @wire-a-path = @AOC-INPUT-LINES[0].split(',');
 my @wire-b-path = @AOC-INPUT-LINES[1].split(',');
@@ -82,8 +93,9 @@ say "Laying wire b";
 $wire-layer.start-wire('b');
 $wire-layer.exec-command($_) for @wire-b-path;
 
-my $ans = $grid.get-collision-coordinates
-               .map( { calc-distance(|$_) } )
+my $ans = $grid.get-collision-points
+               .map( { my ($coordinates, $node) = $_;
+                       calc-total-length($node) } )
                .min;
 
-say "Distance to closest intersection: $ans";
+say "Shortest length to intersection: $ans";
