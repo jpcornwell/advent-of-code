@@ -5,23 +5,36 @@ use lib '../../common';
 use AOC;
 
 use lib '.';
-use IntComputer;
+use IntComputer-v2;
 
 my @program = $AOC-INPUT-WHOLE.split(',');
-my $computer = Computer.new;
+my @computers = Computer.new xx 5;
 
 my $hi-signal = 0;
 
 my @phase-settings = 5..9;
 for @phase-settings.permutations -> @permutation {
+    my $halted = False;
     my $in = 0;
-    for @permutation -> $phase {
-        $computer.reset;
-        $computer.pre-load-inputs($phase, $in);
-        $computer.run(@program);
-        $in = $computer.fetch-output[0];
+
+    # Reset computers
+    .reset for @computers;
+    .load-program(@program) for @computers;
+
+    # Preload the phase inputs
+    for @computers Z @permutation -> ($comp, $phase) { $comp.add-inputs($phase) }
+    .run for @computers;
+
+    while not $halted {
+        for @computers -> $comp {
+            $comp.add-inputs($in);
+            $comp.run;
+            $in = $comp.remove-output;
+        }
+        # Check the last computer to see if we're done
+        $halted = @computers[4].is-halted;
+        $hi-signal max= $in if $halted;
     }
-    $hi-signal max= $in;
 }
 
 say "High signal is $hi-signal";
