@@ -4,27 +4,32 @@ use v6;
 use lib '../../common';
 use AOC;
 
-my @asteroid-map = @AOC-INPUT-LINES;
+my @asteroid-map = @AOC-INPUT-LINES.map: *.comb.cache;
 
 # Get list of points
 my @points;
 for @asteroid-map.kv -> $y, $line {
-    for $line.comb.kv -> $x, $char {
+    for $line.kv -> $x, $char {
         @points.push(($x, $y)) if $char eq '#';
     }
 }
 
-my $max-visible-count;
+my $max-visible-count = 0;
+my @best-asteroid;
 
 for @points -> @point {
     my $visible-count = 0;
 
     $visible-count++ if is-visible(@point, $_) for @points;
 
-    $max-visible-count max= $visible-count;
+    if $visible-count > $max-visible-count {
+        $max-visible-count = $visible-count;
+        @best-asteroid = @point;
+    }
 }
 
 say "Max visible count: $max-visible-count";
+say "For asteroid @best-asteroid[]";
 
 sub is-visible(@origin, @asteroid) {
     # Asteroid can't see itself
@@ -42,7 +47,7 @@ sub is-visible(@origin, @asteroid) {
     my $x = @origin[0] + $x-step;
     my $y = @origin[1] + $y-step;
     until ($x, $y) eqv @asteroid {
-        return False if ($x, $y) eqv any(@points);
+        return False if @asteroid-map[$y][$x] eq '#';
         $x += $x-step;
         $y += $y-step;
     }
