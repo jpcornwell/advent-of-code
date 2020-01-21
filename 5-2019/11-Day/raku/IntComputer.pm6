@@ -36,6 +36,7 @@ class Computer is export {
         @!output-buffer = [];
         $!is-halted = False;
         $!ip = 0;
+        $!rb = 0;
     }
 
     method run() {
