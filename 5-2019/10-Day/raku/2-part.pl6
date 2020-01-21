@@ -80,14 +80,6 @@ sub is-visible(@origin, @asteroid) {
 
     # Figure out smallest "step"
     my $gcd = $x-delta gcd $y-delta;
-    if $gcd == 0 {
-        say "WHOA WHOA WHOA";
-        say "WHOA WHOA WHOA";
-        say "WHOA WHOA WHOA";
-        say $x-delta, $y-delta;
-        say "origin: {@origin[].perl}";
-        say "asteroid: {@asteroid[].perl}";
-    }
     my $x-step = ($x-delta / $gcd).Int;
     my $y-step = ($y-delta / $gcd).Int;
 
