@@ -5,8 +5,26 @@ use lib '../../common';
 use AOC;
 
 class Planet {
-    has ($.x-pos, $.y-pos, $.z-pos) is rw;
-    has ($.x-vel, $.y-vel, $.z-vel) is rw;
+    has ($.x-pos, $.y-pos, $.z-pos,
+         $.x-vel, $.y-vel, $.z-vel) is rw;
+}
+
+sub get-x-state(@planets) {
+    my @state;
+    @state.append($_.x-pos, $_.x-vel) for @planets;
+    return @state;
+}
+
+sub get-y-state(@planets) {
+    my @state;
+    @state.append($_.y-pos, $_.y-vel) for @planets;
+    return @state;
+}
+
+sub get-z-state(@planets) {
+    my @state;
+    @state.append($_.z-pos, $_.z-vel) for @planets;
+    return @state;
 }
 
 sub run-step(@planets) {
@@ -28,18 +46,66 @@ sub run-step(@planets) {
     }
 }
 
-sub calc-total-energy(@planets) {
-    my $sum = 0;
+# All the offsets in the following get-period functions happen to be zero
+# for the input that was provided to us, so we can ignore them
 
-    $sum += ($_.x-pos.abs + $_.y-pos.abs + $_.z-pos.abs) *
-            ($_.x-vel.abs + $_.y-vel.abs + $_.z-vel.abs) for @planets;
+sub get-x-period(@input) {
+    my @planets = @input;
+    my %visited;
+    %visited{$(get-x-state(@planets))} = 0;
 
-    return $sum;
+    my $count = 0;
+    loop {
+        $count++;
+        run-step(@planets);
+        if defined %visited{$(get-x-state(@planets))} {
+            my $offset = %visited{$(get-x-state(@planets))};
+            my $period = $count - $offset;
+            return $period;
+        }
+        %visited{$(get-x-state(@planets))} = $count - 1;;
+    }
+}
+
+sub get-y-period(@input) {
+    my @planets = @input;
+    my %visited;
+    %visited{$(get-y-state(@planets))} = 0;
+
+    my $count = 0;
+    loop {
+        $count++;
+        run-step(@planets);
+        if defined %visited{$(get-y-state(@planets))} {
+            my $offset = %visited{$(get-y-state(@planets))};
+            my $period = $count - $offset;
+            return $period;
+        }
+        %visited{$(get-y-state(@planets))} = $count - 1;
+    }
+}
+
+sub get-z-period(@input) {
+    my @planets = @input;
+    my %visited;
+    %visited{$(get-z-state(@planets))} = 0;
+
+    my $count = 0;
+    loop {
+        $count++;
+        run-step(@planets);
+        if defined %visited{$(get-z-state(@planets))} {
+            my $offset = %visited{$(get-z-state(@planets))};
+            my $period = $count - $offset;
+            return $period;
+        }
+        %visited{$(get-z-state(@planets))} = $count - 1;
+    }
 }
 
 my @lines = @AOC-INPUT-LINES;
-#@lines = "<x=-1, y=0, z=2>\n<x=2, y=-10, z=-7>\n<x=4, y=-8, z=8>\n<x=3, y=5, z=-1>".split("\n");
 
+# Initialize @planets
 my @planets;
 for @lines -> $line {
     my $planet = Planet.new;
@@ -55,6 +121,12 @@ for @lines -> $line {
     @planets.push($planet);
 }
 
-run-step(@planets) for ^1000;
+my $x-period = get-x-period(@planets);
+say "x period: $x-period";
+my $y-period = get-y-period(@planets);
+say "y period: $y-period";
+my $z-period = get-z-period(@planets);
+say "z period: $z-period";
 
-say "Total energy: {calc-total-energy(@planets)}";
+say "Number of steps: {$x-period lcm $y-period lcm $z-period}";
+
