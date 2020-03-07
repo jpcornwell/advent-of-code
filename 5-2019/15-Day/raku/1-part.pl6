@@ -8,9 +8,11 @@ use lib '.';
 use IntComputer;
 
 # TODO
-# Add enums for directions and tile types
-# Move most of the logic out of Map and into Strategy modules
 # See if there is an easy way to accept input without needing to press enter
+
+enum Direction (North => 1, South => 2, West =>3, East => 4);
+enum Tile (Wall => '#');
+enum StatusCode <WallHit NoHit GoalHit>;
 
 class Node {
     has $.tile is rw = ' ';
@@ -29,48 +31,29 @@ class Grid {
 
 class Map {
     has $.grid = Grid.new;
-    has $!droid-x = 0;
-    has $!droid-y = 0;
     has $!top-boundary = 1;
     has $!left-boundary = -1;
     has $!right-boundary = 1;
     has $!bottom-boundary = -1;
-    has $.last-input is rw = '';
 
-    method handle-output($out) {
-        if ($out == 0) {
-            given $!last-input {
-                when 'n' { $!grid.get-point($!droid-x, $!droid-y + 1).tile = '#'; }
-                when 's' { $!grid.get-point($!droid-x, $!droid-y - 1).tile = '#'; }
-                when 'w' { $!grid.get-point($!droid-x - 1, $!droid-y).tile = '#'; }
-                when 'e' { $!grid.get-point($!droid-x + 1, $!droid-y).tile = '#'; }
-            }
-        }
-
-        if ($out == 1) {
-            given $!last-input {
-                when 'n' { $!droid-y++; }
-                when 's' { $!droid-y--; }
-                when 'w' { $!droid-x--; }
-                when 'e' { $!droid-x++; }
-            }
-        }
+    method update-point($x, $y, $tile) {
+        $!grid.get-point($x, $y).tile = $tile;
 
         # Update any boundaries
-        $!top-boundary++ if $!droid-y > ($!top-boundary - 1);
-        $!bottom-boundary-- if $!droid-y < ($!bottom-boundary + 1);
-        $!left-boundary-- if $!droid-x < ($!left-boundary + 1);
-        $!right-boundary++ if $!droid-x > ($!right-boundary - 1);
+        $!top-boundary++ if $y > $!top-boundary;
+        $!bottom-boundary-- if $y < $!bottom-boundary;
+        $!left-boundary-- if $x < $!left-boundary;
+        $!right-boundary++ if $x > $!right-boundary;
     }
 
-    method print {
+    method print($marker-x, $marker-y, $marker) {
         my $width = ($!left-boundary ... $!right-boundary).elems;
         say '-' x $width + 4;
         for $!top-boundary ... $!bottom-boundary -> $y {
         print '| ';
             for $!left-boundary ... $!right-boundary -> $x {
-                if ($x == $!droid-x && $y == $!droid-y) {
-                    print 'D';
+                if ($x == $marker-x && $y == $marker-y) {
+                    print $marker;
                 } else {
                     print $!grid.get-point($x, $y).tile;
                 }
@@ -84,27 +67,44 @@ class Map {
 my $map = Map.new;
 
 module ManualNavigation {
+    my $x = 0;
+    my $y = 0;
+    my $last-input;
+
     our sub handle-input {
         my $input = '';
-        while ($input ne 'n' &&
-                $input ne 'w' &&
-                $input ne 'e' &&
-                $input ne 's') {
+        until $input eq any(<n w e s>) {
             $input = prompt('Direction: ');
             exit if $input eq 'exit';
         }
-        $map.last-input = $input;
         given $input {
-            when 'n' { return 1; }
-            when 's' { return 2; }
-            when 'w' { return 3; }
-            when 'e' { return 4; }
+            when 'n' { $last-input = North; return North; }
+            when 'w' { $last-input = West; return West; }
+            when 'e' { $last-input = East; return East; }
+            when 's' { $last-input = South; return South; }
         }
     }
 
     our sub handle-output($out) {
-        $map.handle-output($out);
-        $map.print;
+        if ($out == WallHit) {
+            given $last-input {
+                when North { $map.update-point($x, $y + 1, Wall); }
+                when South { $map.update-point($x, $y - 1, Wall); }
+                when West  { $map.update-point($x - 1, $y, Wall); }
+                when East  { $map.update-point($x + 1, $y, Wall); }
+            }
+        }
+
+        if ($out == NoHit) {
+            given $last-input {
+                when North { $y++; $map.update-point($x, $y, ' '); }
+                when South { $y--; $map.update-point($x, $y, ' '); }
+                when West  { $x--; $map.update-point($x, $y, ' '); }
+                when East  { $x++; $map.update-point($x, $y, ' '); }
+            }
+        }
+
+        $map.print($x, $y, 'D');
     }
 }
 
