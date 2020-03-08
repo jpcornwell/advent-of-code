@@ -7,11 +7,8 @@ use AOC;
 use lib '.';
 use IntComputer;
 
-# TODO
-# See if there is an easy way to accept input without needing to press enter
-
 enum Direction (North => 1, South => 2, West =>3, East => 4);
-enum Tile (Wall => '#');
+enum Tile (Wall => '#', Goal => 'O', Explored => '.');
 enum StatusCode <WallHit NoHit GoalHit>;
 
 class Node {
@@ -96,15 +93,78 @@ module ManualNavigation {
         }
 
         if ($out == NoHit) {
-            given $last-input {
-                when North { $y++; $map.update-point($x, $y, ' '); }
-                when South { $y--; $map.update-point($x, $y, ' '); }
-                when West  { $x--; $map.update-point($x, $y, ' '); }
-                when East  { $x++; $map.update-point($x, $y, ' '); }
-            }
+            move-droid($last-input);
+            $map.update-point($x, $y, Explored);
+        }
+
+        if ($out == GoalHit) {
+            move-droid($last-input);
+            $map.update-point($x, $y, Goal);
+            say "YOU FOUND THE GOAL!";
         }
 
         $map.print($x, $y, 'D');
+    }
+
+    my sub move-droid($direction) {
+        given $direction {
+            when North { $y++; }
+            when South { $y--; }
+            when West  { $x--; }
+            when East  { $x++; }
+        }
+    }
+}
+
+module FloodFill {
+    my $x = 0;
+    my $y = 0;
+    my $last-input;
+    my $last-output;
+    my @stack;
+
+    my $iterator = gather loop {
+        take West;
+    }.iterator;
+
+    our sub handle-input {
+        my $direction = $iterator.pull-one;
+        $last-input = $direction;
+        return $last-input;
+    }
+
+    our sub handle-output($out) {
+        if ($out == WallHit) {
+            given $last-input {
+                when North { $map.update-point($x, $y + 1, Wall); }
+                when South { $map.update-point($x, $y - 1, Wall); }
+                when West  { $map.update-point($x - 1, $y, Wall); }
+                when East  { $map.update-point($x + 1, $y, Wall); }
+            }
+            exit;
+        }
+
+        if ($out == NoHit) {
+            move-droid($last-input);
+            $map.update-point($x, $y, Explored);
+        }
+
+        if ($out == GoalHit) {
+            move-droid($last-input);
+            $map.update-point($x, $y, Goal);
+            say "YOU FOUND THE GOAL!";
+        }
+
+        $map.print($x, $y, 'D');
+    }
+
+    my sub move-droid($direction) {
+        given $direction {
+            when North { $y++; }
+            when South { $y--; }
+            when West  { $x--; }
+            when East  { $x++; }
+        }
     }
 }
 
@@ -116,13 +176,16 @@ sub MAIN(Bool :i(:$interactive)) {
 
     if ($interactive) {
         say "Type 'exit' to quit program.";
+        say "Type 'n', 'e', 's', or 'w' to move.";
         $computer.input-hook = &ManualNavigation::handle-input;
         $computer.output-hook = &ManualNavigation::handle-output;
 
         $computer.run;
     } else {
-        say "Automation not implemented yet";
-        exit;
+        $computer.input-hook = &FloodFill::handle-input;
+        $computer.output-hook = &FloodFill::handle-output;
+
+        $computer.run;
     }
 }
 
