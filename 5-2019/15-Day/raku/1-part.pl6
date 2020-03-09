@@ -8,11 +8,11 @@ use lib '.';
 use IntComputer;
 
 enum Direction (North => 1, South => 2, West =>3, East => 4);
-enum Tile (Wall => '#', Goal => 'O', Explored => '.');
+enum Tile (Wall => '#', Goal => 'O', Explored => '.', Unknown => ' ');
 enum StatusCode <WallHit NoHit GoalHit>;
 
 class Node {
-    has $.tile is rw = ' ';
+    has $.tile is rw = Unknown;
 }
 
 class Grid {
@@ -43,6 +43,11 @@ class Map {
         $!right-boundary++ if $x > $!right-boundary;
     }
 
+    method get-point($x, $y) {
+        my $tile = $!grid.get-point($x, $y).tile;
+        return $tile;
+    }
+
     method print($marker-x, $marker-y, $marker) {
         my $width = ($!left-boundary ... $!right-boundary).elems;
         say '-' x $width + 4;
@@ -62,6 +67,7 @@ class Map {
 }
 
 my $map = Map.new;
+$map.update-point(0, 0, Explored);
 
 module ManualNavigation {
     my $x = 0;
@@ -120,20 +126,66 @@ module FloodFill {
     my $x = 0;
     my $y = 0;
     my $last-input;
-    my $last-output;
-    my @stack;
+    my $last-output = -1;
 
-    my $iterator = gather loop {
-        take West;
-    }.iterator;
+    sub flood-fill($direction) {
+        lazy gather {
+            if $last-output != WallHit && $last-output != GoalHit {
+                if $map.get-point($x, $y + 1) ne Explored {
+                    take North;
+                    take $_ for flood-fill(North);
+                }
+
+                if $map.get-point($x + 1, $y) ne Explored {
+                    take East;
+                    take $_ for flood-fill(East);
+                }
+
+                if $map.get-point($x, $y - 1) ne Explored {
+                    take South;
+                    take $_ for flood-fill(South);
+                }
+
+                if $map.get-point($x - 1, $y) ne Explored {
+                    take West;
+                    take $_ for flood-fill(West);
+                }
+
+                # Undo step
+                given $direction {
+                    when North { take South; }
+                    when West  { take East;  }
+                    when South { take North; }
+                    when East  { take West;  }
+                }
+            }
+        }
+    }
+
+    my $iterator = flood-fill(North).iterator;
 
     our sub handle-input {
-        my $direction = $iterator.pull-one;
+        #exit if prompt("Continue: ") eq 'exit';
+        my $foo := $iterator.pull-one;
+        if $foo =:= IterationEnd {
+            say "THE END!";
+            $map.print($x, $y, 'D');
+            exit;
+        }
+        my $direction = $foo;
         $last-input = $direction;
         return $last-input;
     }
 
     our sub handle-output($out) {
+        state $count = 0;
+        $count++;
+
+        if $count %% 100 {
+            say "Count at $count";
+            $map.print($x, $y, 'X');
+        }
+
         if ($out == WallHit) {
             given $last-input {
                 when North { $map.update-point($x, $y + 1, Wall); }
@@ -141,7 +193,6 @@ module FloodFill {
                 when West  { $map.update-point($x - 1, $y, Wall); }
                 when East  { $map.update-point($x + 1, $y, Wall); }
             }
-            exit;
         }
 
         if ($out == NoHit) {
@@ -152,10 +203,11 @@ module FloodFill {
         if ($out == GoalHit) {
             move-droid($last-input);
             $map.update-point($x, $y, Goal);
-            say "YOU FOUND THE GOAL!";
         }
 
-        $map.print($x, $y, 'D');
+        $last-output = $out;
+
+        #$map.print($x, $y, 'D');
     }
 
     my sub move-droid($direction) {
