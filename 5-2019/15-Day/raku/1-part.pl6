@@ -130,23 +130,23 @@ module FloodFill {
 
     sub flood-fill($direction) {
         lazy gather {
-            if $last-output != WallHit && $last-output != GoalHit {
-                if $map.get-point($x, $y + 1) ne Explored {
+            if $last-output != WallHit {
+                if $map.get-point($x, $y + 1) eq Unknown {
                     take North;
                     take $_ for flood-fill(North);
                 }
 
-                if $map.get-point($x + 1, $y) ne Explored {
+                if $map.get-point($x + 1, $y) eq Unknown {
                     take East;
                     take $_ for flood-fill(East);
                 }
 
-                if $map.get-point($x, $y - 1) ne Explored {
+                if $map.get-point($x, $y - 1) eq Unknown {
                     take South;
                     take $_ for flood-fill(South);
                 }
 
-                if $map.get-point($x - 1, $y) ne Explored {
+                if $map.get-point($x - 1, $y) eq Unknown {
                     take West;
                     take $_ for flood-fill(West);
                 }
