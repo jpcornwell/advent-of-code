@@ -241,7 +241,9 @@ module FloodFill {
     }
 }
 
-sub find-shortest-distance-to-goal(@nodes, Node :$start!, Node :$end) {
+# Returns the shortest distance between two nodes, or returns the shortest
+# distances between a specific node and all other nodes
+sub find-shortest-distance(@nodes, Node :$start!, Node :$end) {
     # Use Dijkstra's algorithm
     
     my $unconsidered = SetHash.new(@nodes);
@@ -251,7 +253,7 @@ sub find-shortest-distance-to-goal(@nodes, Node :$start!, Node :$end) {
     %distances{$_} = Inf for @nodes;
     %distances{$start} = 0;
 
-    until $end (elem) $considered {
+    until $end.defined && $end (elem) $considered || $unconsidered.elems == 0 {
         my $u = $unconsidered.keys.sort( { %distances{$^a}; } )[0];
         $unconsidered{$u}--;
         $considered{$u}++;
@@ -262,11 +264,12 @@ sub find-shortest-distance-to-goal(@nodes, Node :$start!, Node :$end) {
             my $start-to-u = %distances{$u};
             my $u-to-v = $start-to-u + $weight;
 
-            %distances{$v} = $u-to-v if $u-to-v < %distances{$v};
+            %distances{$v} min= $u-to-v;
         }
     }
 
-    return %distances{$end};
+    return %distances{$end} if $end.defined;
+    return %distances;
 }
 
 sub MAIN(Bool :i(:$interactive)) {
@@ -289,14 +292,11 @@ sub MAIN(Bool :i(:$interactive)) {
         say 'Navigating maze...';
         $computer.run;
 
-        say 'Finding shortest distance to goal...';
+        say 'Finding time to fill with oxygen...';
         my @nodes = $map.get-walkable-nodes;
-        # Need to use x and y coordinates because the value of tile gets
-        # overridden to Explored during the flood fill algorithm
-        my $start = $_ if (.x, .y) eqv (0, 0) for @nodes;
-        my $end = $_ if .tile eq Goal for @nodes;
-        my $dist = find-shortest-distance-to-goal(@nodes, :$start, :$end);
-        say "Shortest distance from start to goal is $dist";
+        my $start = $_ if .tile eq Goal for @nodes;
+        my %distances = find-shortest-distance(@nodes, :$start);
+        say %distances.pairs.sort(*.value)[*-1].value;
     }
 }
 

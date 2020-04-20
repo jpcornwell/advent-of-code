@@ -89,6 +89,7 @@ class Computer is export {
                         $in = prompt('Input> ');
                     } elsif defined $!input-hook {
                         $in = $!input-hook();
+                        return if $in eq "a";
                     } elsif @!input-buffer.elems == 0 {
                         # Quit running to allow the user to add input
                         return;
