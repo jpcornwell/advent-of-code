@@ -18,22 +18,22 @@ sub is-valid($passport) {
   # ---------------
 
   given %fields<byr> {
-    return False if !m/ <digit> ** 4 /;
+    return False if !m/^ <digit> ** 4 $/;
     return False if !(1920 <= $_ <= 2002);
   }
 
   given %fields<iyr> {
-    return False if !m/ <digit> ** 4 /;
+    return False if !m/^ <digit> ** 4 $/;
     return False if !(2010 <= $_ <= 2020);
   }
 
   given %fields<eyr> {
-    return False if !m/ <digit> ** 4 /;
+    return False if !m/^ <digit> ** 4 $/;
     return False if !(2020 <= $_ <= 2030);
   }
 
   given %fields<hgt> {
-    return False if !m/ <digit>+ in | cm /;
+    return False if !m/^ <digit>+ in | cm $/;
     my $unit = $_.substr(*-2);
     my $amount = $_.comb(/\d+/).first.Num;
     return False if ($unit eq 'in' && !(59 <= $amount <= 76));
@@ -41,7 +41,7 @@ sub is-valid($passport) {
   }
 
   given %fields<hcl> {
-    return False if !m/ \# <[a..f 0..9]> ** 6 /;
+    return False if !m/^ '#' <[a..f 0..9]> ** 6 $/;
   }
 
   given %fields<ecl> {
@@ -49,7 +49,7 @@ sub is-valid($passport) {
   }
 
   given %fields<pid> {
-    return False if !m/ <digit> ** 9 /;
+    return False if !m/^ <digit> ** 9 $/;
   }
 
   return True;
