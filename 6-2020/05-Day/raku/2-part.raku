@@ -35,9 +35,7 @@ sub get-coords($pass) {
 
 sub get-id(@coords) { @coords[0] * 8 + @coords[1] }
 
-my @seat-ids = @passes.map(&get-coords).map(&get-id).sort;
+my @seat-ids = @passes.map(&get-coords).map(&get-id);
 
-for ^@seat-ids.elems -> $i {
-  say @seat-ids[$i] + 1 andthen last if @seat-ids[$i+1] - @seat-ids[$i] == 2;
-}
+say (@seat-ids.min .. @seat-ids.max) (-) @seat-ids;
 
