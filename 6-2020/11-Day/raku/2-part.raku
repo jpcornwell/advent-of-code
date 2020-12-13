@@ -15,10 +15,7 @@ for ^$width X ^$height -> ($x, $y) {
 }
 
 loop {
-  my $has-changed = process-grid;
-  if !$has-changed {
-    last;
-  }
+  last if process-grid;
 }
 
 say @grid.values.grep(* eq '#').elems;
@@ -44,18 +41,18 @@ sub get-adjacent($x, $y) {
   
 sub process-grid {
   my @new-grid[$width ; $height];
-  my $has-changed = False;
+  my $is-stable = True;
   for ^$width X ^$height -> ($x, $y) {
     @new-grid[$x;$y] = @grid[$x;$y];
     if @grid[$x;$y] eq 'L' && get-adjacent($x, $y).comb('#').elems == 0 {
       @new-grid[$x;$y] = '#';
-      $has-changed = True;
+      $is-stable = False;
     } elsif @grid[$x;$y] eq '#' && get-adjacent($x, $y).comb('#').elems >= 5 {
       @new-grid[$x;$y] = 'L';
-      $has-changed = True;
+      $is-stable = False;
     }
   }
   @grid = @new-grid;
-  return $has-changed;
+  return $is-stable;
 }
 
